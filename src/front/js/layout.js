@@ -8,6 +8,7 @@ import { Single } from "./pages/single";
 import { Info } from "./pages/info"
 import injectContext from "./store/appContext";
 import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
 
 import { Navbar } from "./component/navbar";
 import { Footer } from "./component/footer";
@@ -24,7 +25,8 @@ const Layout = () => {
 				<ScrollToTop>
 					<Navbar />
 					<Routes>
-                        <Route element={<Login />} path="/login" />
+                        <Route path="/login" element={<Login />} />
+						<Route path="/signup" element={<Signup />} />
 						<Route path="/" element={<Home />} />
 						<Route path="/demo" element={<Demo />} />
 						<Route path="/:type/:id" element={<Info />}/>
