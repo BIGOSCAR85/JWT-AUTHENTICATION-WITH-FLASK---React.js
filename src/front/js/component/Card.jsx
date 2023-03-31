@@ -11,10 +11,11 @@ export const Card = (props) => {
         <div className="card col-3 mx-2" style={{ width: "12rem" }}>
             <img src={props.picture} className="card-img-top" alt="..." />
             <div className="card-header">
-                <h2 className="card-title">{props.item.name}</h2>
+                <h2 className="card-title">{props.item ? properties.item.name :""}</h2>
             </div>
             <div className="card-body">
                 {
+                    props.item &&
                     Object.keys(props.item).map((key) => {
                         if (properties.includes(key)) {
                             return <p className="card-text m-0">
@@ -33,8 +34,8 @@ export const Card = (props) => {
                 </Link>
                 <button
                     className={
-                        actions.isFavorite(props.item) ? "btn btn-danger fas fa-heart"
-                            : "btn btn-outline-dark far fa-heart"
+                       
+                             "btn btn-outline-dark far fa-heart"
                     }
                     onClick={(event) => actions.toggleFavorites(props.item)}
                 >

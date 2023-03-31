@@ -5,57 +5,72 @@ import { Link } from "react-router-dom";
 
 export const Login = () => {
 
-return (
-    <>
-    <div className="bodyL">
-    <div className="container-form sign-up">
-    <div className="welcome-back">
-        <div className="message">
-            <h2>Bienvenido a mi</h2>
-            <p>Si ya tienes cuenta por favor inicia sesion aqui</p>
-            <button className="sign-up-btn">Iniciar Sesion</button>
-        </div>
-    </div>
-    <form className="formulario"/>
-        <h2 className="create-account">Crear una cuenta</h2>        
-        </div>           
-        <p className="cuenta-gratis"> Crear una cuenta aqui</p>
-        <input type="text" placeholder="Nombre"/>
-        <input type="email" placeholder="Email"/>
-        <input type="password" placeholder="Contraseña"/>
-        <input type="button" value="Registrarse"/>
-    
-</div>
-<div className="container-form sign-in">
-    <form className="formulario"/>
-        <h2 className="create-account">Iniciar sesion</h2>
-        <div className="icons">
-            <div className="border-icon">
-                <i class='bx bxl-google'></i>
-            </div>
-            <div class="border-icon">
-                <i class='bx bxl-instagram'></i>
-            </div>                
-            <div class="border-icon">
-                <i class='bx bxl-facebook-circle' ></i>
-            </div>
-        </div>
-        <p class="cuenta-gratis">¿Aun no tienes cuenta?</p>            
-        <input type="email" placeholder="Email"/>
-        <input type="password" placeholder="Contraseña"/>
-        <input type="button" value="Iniciar Sesion"/>
-    
-    <div class="welcome-back">
-        <div class="message">
-            <h2>Bienvenido de nuevo</h2>
-            <p>Si aun no tienes cuenta por favor registrese aqui</p>
-            <button class="sign-in-btn">Registrarse</button>
-        </div>
-    </div>
-    
-</div> 
-    
-    </>
-)
+    const { store, actions } = useContext(Context);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const navigate = useNavigate();
 
-}
+
+    useEffect(() => {
+        if (store.token && store.token !== "" && store.token !== undefined) {
+            navigate("/");
+        }
+    }, [store.token]);
+
+    const sendData = (event) => {
+        event.preventDefault();
+        actions.login(email, password);
+    };
+
+    return (
+        <React.Fragment>
+            <div className="container login w-50 mt-2">
+                <h1 className="text-center display-6">Login</h1>
+                {!(store.token && store.token != "" && store.token != undefined) && (
+                    <div>
+                        <form>
+                            <div className="mb-3">
+                                <label
+                                    className="form-label">Email address
+                                </label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    placeholder="Please entere your email"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label
+                                    className="form-label">Password
+                                </label>
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    placeholder="Please enter your password"
+                                    value={password}
+                                    onChange={(event) => setPassword(event.target.value)}
+                                />
+                            </div>
+                            <div className="text-center">
+                                <button
+                                    type="login"
+                                    className="btn btn-success w-25 me-2"
+                                    onClick={sendData}>
+                                    Login
+                                </button>
+                                <Link to="/signup" className="text-center">
+                                    <button
+                                        className="btn btn-warning w-25">
+                                        Not registered? Signup
+                                    </button>
+                                </Link>
+                            </div>
+                        </form>
+                    </div>
+                )}
+            </div>
+        </React.Fragment>
+    );
+};

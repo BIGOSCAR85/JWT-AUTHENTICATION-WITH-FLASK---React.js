@@ -1,6 +1,8 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
+		
 		store: {
+			token: null,
 			message: null,
 			demo: [
 				{
@@ -14,147 +16,193 @@ const getState = ({ getStore, getActions, setStore }) => {
 					initial: "white",
 				},
 			],
-			apiUrl: "https://swapi.dev/api",
+			//apiUrl: "https://swapi.dev/api",
+			baseUrl: "https://swapi.dev/api",
+			apiUrl: `${process.env.BACKEND_URL}`,
 			characters: [],
 			vehicles: [],
 			planets: [],
 			favorites: []
+			
 		},
 
 		actions: {
 			// Use getActions to call a function within a fuction
-			getCharacters: async () => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${store.apiUrl}/people`);
-					if (!response.ok) {
-						alert("We have a problem with the GetCharacters");
-						return;
-					}
-					const body = await response.json();
-					setStore({
-						characters: body.results
+			syncTokenFromSessionStorage: () => {
+				const token = sessionStorage.getItem("token");
+				console.log("App just loaded, syncing the session storage token");
+				if (token && token != "" && token != undefined)
+					setStore({ token: token });
+			},
+
+
+			login: async (email, password) => {
+				const store = getStore()
+				const options = {
+					method: 'POST',
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({
+						email: email,
+						password: password,
 					})
-					return body;
-				} catch (error) {
-					console.log(error);
+				};
+
+				try {
+					const response = await fetch(`${store.apiUrl}/api/token`, options);
+					if (response.status !== 200) {
+						let showError = await response.json();
+						alert(showError.msg);
+						return false;
+					};
+
+					const data = await response.json();
+					console.log("This came from the backend", data);
+					sessionStorage.setItem("token", data.access_token);
+					setStore({ token: data.access_token });
+					return true;
+				}
+
+				catch (error) {
+					console.error("There was an error trying to login in", error);
 				}
 			},
 
-						getPlanets: async () => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${store.apiUrl}/planets`)
-					if (!response.ok) {
-						alert("We have a problem with the GetPlanets");
-					}
-					const body = await response.json();
-					setStore({
-						planets: body.results
-					})
-					return body;
-				} catch (error) {
-					console.log(error);
-				}
+
+			logout: () => {
+				sessionStorage.removeItem("token");
+				console.log("Login Out");
+				setStore({ token: null })
 			},
-			getVehicles: async () => {
+
+
+			register: async (username, email, password) => {
 				const store = getStore();
+				const options = {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						username: username,
+						email: email,
+						password: password,
+					}),
+				};
+
 				try {
-					const response = await fetch(`${store.apiUrl}/vehicles`)
+					const response = await fetch(`${store.apiUrl}/api/users`, options);
 					if (!response.ok) {
-						alert("We have a problem with the GetVehicles");
+						let danger = await response.json();
+						alert(danger);
+						return false;
 					}
-					const body = await response.json();
-					setStore({
-						vehicles: body.results
-					})
-					return body;
+
+					const data = await response.json();
+					console.log("This came from the backend", data);
+					return true;
 				} catch (error) {
-					console.log(error);
+					console.error("There has been an error signin up");
 				}
 			},
 
-			getCardInfo: async (id, type) => {
-				const store = getStore();
-				try {
-					const response = await fetch(`${store.apiUrl}/${type}/${id}`);
-					if (!response.ok) {
-						alert("We have a problem with the GetCardInfo");
-					}
-					const body = await response.json();
-					return body;
-				} catch (error) {
-					console.log(error);
-				}
-			},
-			isFavorite: (item) => {
-				const store = getStore();
-				return store.favorites.find(
-					(favorite, index) => favorite.name === item.name)
-			},
-			toggleFavorites: (item) => {
-				const store = getStore();
-				const actions = getActions();
 
-				if (actions.isFavorite(item)) {
-					setStore({
-						favorites: store.favorites.filter(
-							(favorite) => favorite.name !== item.name
-						)
-					})
-				} else {
-					setStore({
-						favorites: [
-							...store.favorites,
-							item
-						]
-					}
-					)
-				}
-			},
-			deleteFavorite: (item) => {
+			getAccess: async () => {
 				const store = getStore();
-				const isFavorite = store.favorites.find(
-					(favorite, index) => favorite.name === item.name)
-
-				if (isFavorite) {
-					setStore({
-						favorites: store.favorites.filter(
-							(favorite) => favorite.name !== isFavorite.name
-						)
-					})
-				}
-			},
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
-			getMessage: async () => {
+				const options = {
+					headers: {
+						Authorization: "Bearer " + store.token,
+					},
+				};
 				try {
-					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello");
-					const data = await resp.json();
+					const response = await fetch(`${store.apiUrl}/api/private`, options);
+					const data = await response.json();
 					setStore({ message: data.message });
-					// don't forget to return something, that is how the async resolves
 					return data;
-				} catch (error) {
-					console.log("Error loading message from backend", error);
+				}
+				catch (error) {
+					console.log("Error getting message from the backend", error);
 				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			getCharacters: () => {
+				const store = getStore()
 
-				//reset the global store
-				setStore({ demo: demo });
+				for (let index = 1; index <= 10; index++) {
+					const baseUrlChar = `${store.baseUrl}/people/${index}`
+					console.log(baseUrlChar);
+					fetch(baseUrlChar)
+						.then((response) => {
+							if (response.ok) {
+								return response.json()
+							}
+							throw new Error("Character fetch failed")
+						})
+						.then((body) => {
+							setStore({ characters: [...store.characters, body.result] })
+						})
+						.catch((error) => { console.log(error); })
+				}
 			},
-		},
+
+
+			getPlanets: async () => {
+				const store = getStore()
+
+				for (let index = 1; index <= 10; index++) {
+					try {
+						let response = await fetch(`${store.baseUrl}/planets/${index}`)
+						if (response.ok) {
+							let body = await response.json()
+							setStore({ planets: [...store.planets, body.result] })
+						} else if (response.status === 500) {
+							console.log(response.status);
+						}
+					}
+					catch (error) {
+						console.log(error);
+					}
+				}
+			},
+
+
+			getVehicles: async () => {
+				const store = getStore()
+
+				for (let index = 0; index < 10; index++) {
+					const vehicleId = [4, 7, 6, 8, 14, 18, 16, 19, 20, 24]
+					const vehicleIdUrl = `https://www.swapi.dev/api/vehicles/${vehicleId[index]}`
+					try {
+						let response = await fetch(vehicleIdUrl)
+						if (response.ok) {
+							let body = await response.json()
+							setStore({ vehicles: [...store.vehicles, body.result] })
+						} else if (response.status === 500) {
+							console.log(response.status);
+						}
+					} catch (error) {
+						console.log(error);
+					}
+				}
+			},
+
+
+			addFavorite: (name, url) => {
+				const store = getStore()
+
+				const favs = [...store.favorites, { name: name, url: url }]
+				setStore({ favorites: favs })
+			},
+
+
+			delFavorite: (position) => {
+				const store = getStore()
+
+				const favs = store.favorites.filter((favorite, index) => index !== position)
+				setStore({ favorites: favs })
+			},
+		}
 	};
 };
 
